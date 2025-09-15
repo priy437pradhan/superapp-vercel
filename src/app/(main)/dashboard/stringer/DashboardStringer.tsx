@@ -10,7 +10,16 @@ import { Calendar, Download, ChevronDown, FileText } from 'lucide-react'
 
 const Dashboardstringer: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Separate current values from applied values
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
+  const [appliedDateFrom, setAppliedDateFrom] = useState('')
+  const [appliedDateTo, setAppliedDateTo] = useState('')
+  const [appliedLocations, setAppliedLocations] = useState<string[]>([])
+  const [appliedPriorities, setAppliedPriorities] = useState<string[]>([])
+  const [appliedAuthors, setAppliedAuthors] = useState<string[]>([])
+  
+  // Current filter values (not yet applied)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
@@ -123,21 +132,21 @@ const getCurrentMonthRange = () => {
       const params: FetchActivitiesParams = {
         status: 2,
         appliedSearchTerm: appliedSearchTerm || undefined,
-        selectedLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
-        selectedPriorities: selectedPriorities.length > 0 ? selectedPriorities.map(p => p.toString()) : undefined,
-        selectedCreatedBy: selectedAuthors.length > 0 ? selectedAuthors : undefined,
+        selectedLocations: appliedLocations.length > 0 ? appliedLocations : undefined,
+        selectedPriorities: appliedPriorities.length > 0 ? appliedPriorities.map(p => p.toString()) : undefined,
+        selectedCreatedBy: appliedAuthors.length > 0 ? appliedAuthors : undefined,
       }
 
       // For initial load, fetch latest month data without pagination
-      if (isInitialLoad && !dateFrom && !dateTo && !appliedSearchTerm &&
-        selectedLocations.length === 0 && selectedPriorities.length === 0 && selectedAuthors.length === 0) {
+      if (isInitialLoad && !appliedDateFrom && !appliedDateTo && !appliedSearchTerm &&
+        appliedLocations.length === 0 && appliedPriorities.length === 0 && appliedAuthors.length === 0) {
         params.fetchLatestMonth = true;
       } else {
         // For subsequent loads or when filters are applied, use pagination
         params.page = currentPage;
         params.limit = limit;
-        params.dateFrom = dateFrom || undefined;
-        params.dateTo = dateTo || undefined;
+        params.dateFrom = appliedDateFrom || undefined;
+        params.dateTo = appliedDateTo || undefined;
       }
 
       const response = await fetchActivities(params)
@@ -145,9 +154,11 @@ const getCurrentMonthRange = () => {
       setTotalRecords(response.total_records)
 
       // Set initial date range to current month if it's the first load
-      if (isInitialLoad && !dateFrom && !dateTo) {
+      if (isInitialLoad && !appliedDateFrom && !appliedDateTo) {
         const { from, to } = getCurrentMonthRange();
-        setDateFrom(from);
+        setAppliedDateFrom(from);
+        setAppliedDateTo(to);
+        setDateFrom(from); 
         setDateTo(to);
         setIsInitialLoad(false);
       }
@@ -167,9 +178,10 @@ const getCurrentMonthRange = () => {
     fetchAuthors()
   }, [])
 
+  // Only refetch data when applied filters change, not when current filter values change
   useEffect(() => {
     fetchTableData()
-  }, [currentPage, appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities, selectedAuthors])
+  }, [currentPage, appliedSearchTerm, appliedDateFrom, appliedDateTo, appliedLocations, appliedPriorities, appliedAuthors])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -195,14 +207,39 @@ const getCurrentMonthRange = () => {
     })
   }
 
-  // Filter and action functions
-  const applySearch = () => {
+  // Apply all filters when Apply button is clicked
+  const applyFilters = () => {
     setAppliedSearchTerm(searchTerm)
+    setAppliedDateFrom(dateFrom)
+    setAppliedDateTo(dateTo)
+    setAppliedLocations(selectedLocations)
+    setAppliedPriorities(selectedPriorities)
+    setAppliedAuthors(selectedAuthors)
     setCurrentPage(1)
     setIsInitialLoad(false) 
   }
 
- 
+  // Clear all filters
+  const clearAllFilters = () => {
+    // Clear current filter values
+    setSearchTerm('')
+    setDateFrom('')
+    setDateTo('')
+    setSelectedLocations([])
+    setSelectedPriorities([])
+    setSelectedAuthors([])
+    
+    // Clear applied filter values
+    setAppliedSearchTerm('')
+    setAppliedDateFrom('')
+    setAppliedDateTo('')
+    setAppliedLocations([])
+    setAppliedPriorities([])
+    setAppliedAuthors([])
+    
+    setCurrentPage(1)
+    setIsInitialLoad(true)
+  }
 
   const downloadCSV = () => {
     const csvContent = [
@@ -228,14 +265,13 @@ const getCurrentMonthRange = () => {
     window.URL.revokeObjectURL(url)
   }
 
-  // Selection functions
+  // Selection functions - removed setIsInitialLoad(false) since they don't trigger API calls anymore
   const toggleLocationSelection = (location: string) => {
     setSelectedLocations(prev =>
       prev.includes(location)
         ? prev.filter(l => l !== location)
         : [...prev, location]
     )
-    setIsInitialLoad(false)
   }
 
   const togglePrioritySelection = (priority: string) => {
@@ -244,7 +280,6 @@ const getCurrentMonthRange = () => {
         ? prev.filter(p => p !== priority)
         : [...prev, priority]
     )
-    setIsInitialLoad(false)
   }
 
   const toggleAuthorSelection = (author: string) => {
@@ -253,12 +288,10 @@ const getCurrentMonthRange = () => {
         ? prev.filter(a => a !== author)
         : [...prev, author]
     )
-    setIsInitialLoad(false)
   }
 
   const selectAllLocations = () => {
     setSelectedLocations(locationOptions.map(loc => loc.id))
-    setIsInitialLoad(false)
   }
 
   const clearAllLocations = () => {
@@ -267,7 +300,6 @@ const getCurrentMonthRange = () => {
 
   const selectAllPriorities = () => {
     setSelectedPriorities(priorityOptions.map(priority => priority.id))
-    setIsInitialLoad(false)
   }
 
   const clearAllPriorities = () => {
@@ -276,7 +308,6 @@ const getCurrentMonthRange = () => {
 
   const selectAllAuthors = () => {
     setSelectedAuthors(authorOptions.map(author => author.id))
-    setIsInitialLoad(false)
   }
 
   const clearAllAuthors = () => {
@@ -310,10 +341,7 @@ const getCurrentMonthRange = () => {
               <input
                 type="date"
                 value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value)
-                  setIsInitialLoad(false)
-                }}
+                onChange={(e) => setDateFrom(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
@@ -322,10 +350,7 @@ const getCurrentMonthRange = () => {
               <input
                 type="date"
                 value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value)
-                  setIsInitialLoad(false)
-                }}
+                onChange={(e) => setDateTo(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
@@ -335,7 +360,6 @@ const getCurrentMonthRange = () => {
                   setDateFrom('')
                   setDateTo('')
                   setOpenDropdown(null)
-                  setIsInitialLoad(true)
                 }}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
@@ -345,7 +369,7 @@ const getCurrentMonthRange = () => {
                 onClick={() => setOpenDropdown(null)}
                 className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Apply
+                Close
               </button>
             </div>
           </div>
@@ -400,6 +424,17 @@ const getCurrentMonthRange = () => {
           {/* Filters and Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4">
             <div className="flex flex-col gap-4">
+              {/* Search Input */}
+              <div className="flex gap-2">
+                {/* <input
+                  type="text"
+                  placeholder="Search headlines..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                /> */}
+              </div>
+              
               {/* Filter Dropdowns */}
               <div className="flex flex-wrap gap-2 sm:gap-3 justify-between">
                 <div className='flex flex-wrap gap-2 sm:gap-3'>
@@ -453,10 +488,16 @@ const getCurrentMonthRange = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={applySearch}
+                    onClick={applyFilters}
                     className="flex-1 sm:flex-none px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
                     Apply
+                  </button>
+                  <button
+                    onClick={clearAllFilters}
+                    className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  >
+                    Clear All
                   </button>
                   <button
                     onClick={downloadCSV}
@@ -539,7 +580,6 @@ const getCurrentMonthRange = () => {
                       </td>
                       <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
-
                           {activity.content_price}
                         </div>
                       </td>
@@ -564,8 +604,6 @@ const getCurrentMonthRange = () => {
             </div>
           )}
         </div>
-
-
       </div>
     </div>
   )
