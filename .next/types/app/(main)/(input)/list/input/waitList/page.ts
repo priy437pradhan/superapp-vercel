@@ -1,4 +1,4 @@
-// File: C:\Users\bandana\OneDrive\Desktop\superapp-nextjs-otv\src\app\(main)\(input)\list\input\waitList\page.tsx
+// File: C:\Users\bandana\OneDrive\Desktop\superapp-nextjs-otv-vercel\src\app\(main)\(input)\list\input\waitList\page.tsx
 import * as entry from '../../../../../../../../src/app/(main)/(input)/list/input/waitList/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
