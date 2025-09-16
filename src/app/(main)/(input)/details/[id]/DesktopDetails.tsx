@@ -862,7 +862,7 @@ const DesktopStoryDetailView: React.FC = () => {
                           rel="noopener noreferrer"
                           className="attachment-link"
                         >
-                          <Image 
+                          <img
                             src={`${process.env.NEXT_PUBLIC_CDN_URL}/${attachment.path}`}
                             alt={getFileName(attachment.path)}
                             className="w-full h-full object-cover rounded-lg"

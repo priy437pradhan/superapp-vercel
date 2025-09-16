@@ -1,1 +1,8 @@
-{}
+{
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
+  "/(main)/(input)/list/input/outputToInput/page": "app/(main)/(input)/list/input/outputToInput/page.js",
+  "/(main)/(input)/list/input/waitList/page": "app/(main)/(input)/list/input/waitList/page.js",
+  "/(main)/(input)/details/[id]/page": "app/(main)/(input)/details/[id]/page.js",
+  "/(main)/(input)/list/input/inputToStringer/page": "app/(main)/(input)/list/input/inputToStringer/page.js"
+}
